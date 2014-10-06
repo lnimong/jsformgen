@@ -1,0 +1,59 @@
+select
+----------------------------------------
+<p>
+    Your country:
+    <select data-bind="options: availableCountries,
+                       optionsText: 'countryName',
+                       value: selectedCountry,
+                       optionsCaption: 'Choose...'"></select>
+</p>
+
+text input
+---------------------------------------
+<p>Login name: <input data-bind="textInput: userName" /></p>
+<p>Password: <input type="password" data-bind="textInput: userPassword" /></p>
+ 
+ViewModel:
+<pre data-bind="text: ko.toJSON($root, null, 2)"></pre>
+ 
+<script>
+    ko.applyBindings({
+        userName: ko.observable(""),        // Initially blank
+        userPassword: ko.observable("abc")  // Prepopulate
+    });
+</script>
+
+checkbox
+-------------------------------------------
+<p>Send me spam: <input type="checkbox" data-bind="checked: wantsSpam" /></p>
+ 
+<script type="text/javascript">
+    var viewModel = {
+        wantsSpam: ko.observable(true) // Initially checked
+    };
+ 
+    // ... then later ...
+    viewModel.wantsSpam(false); // The checkbox becomes unchecked
+</script>
+
+
+
+radio
+------------------------------------------
+<p>Send me spam: <input type="checkbox" data-bind="checked: wantsSpam" /></p>
+<div data-bind="visible: wantsSpam">
+    Preferred flavor of spam:
+    <div><input type="radio" name="flavorGroup" value="cherry" data-bind="checked: spamFlavor" /> Cherry</div>
+    <div><input type="radio" name="flavorGroup" value="almond" data-bind="checked: spamFlavor" /> Almond</div>
+    <div><input type="radio" name="flavorGroup" value="msg" data-bind="checked: spamFlavor" /> Monosodium Glutamate</div>
+</div>
+ 
+<script type="text/javascript">
+    var viewModel = {
+        wantsSpam: ko.observable(true),
+        spamFlavor: ko.observable("almond") // Initially selects only the Almond radio button
+    };
+ 
+    // ... then later ...
+    viewModel.spamFlavor("msg"); // Now only Monosodium Glutamate is checked
+</script>

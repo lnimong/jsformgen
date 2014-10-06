@@ -1,0 +1,195 @@
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>title</title>
+
+    <link rel="stylesheet" type="text/css" href="style.css">
+
+    <script src="jquery.js"></script>
+    <script src="knockout.js"></script>
+    <script src="lodash.js"></script>
+
+    <script src="vm.shell.js"></script>
+    <script src="vm.editor.js"></script>
+    <script src="vm.form.browser.js"></script>
+    <script src="vm.form.js"></script>
+    <script src="vm.result.browser.js"></script>
+    <script src="vm.result.js"></script>
+    <script src="services.js"></script>
+
+    <script type="text/javascript">
+      //pour info : seule utlisation de jquery
+      $(function (){
+
+        var services = ServicesManager(_);
+
+        var shellVM = new ShellVM(ko, FormVM, ResultVM, services);
+        
+        shellVM.editorContext = new EditorVM(ko, services);
+        shellVM.editorContext.whenOpenForm(shellVM.openForm);;
+
+        shellVM.formsBrowserContext = new FormsBrowserVM(ko, services);
+        shellVM.formsBrowserContext.whenOpenForm(shellVM.openForm);
+
+        shellVM.resultsBrowserContext = new ResultsBrowserVM(ko, services);
+        shellVM.resultsBrowserContext.whenOpenResult(shellVM.openResult);
+
+        ko.applyBindings(shellVM);
+
+      });
+    </script>
+  </head>
+  <body>
+
+    <div id="tabs" data-bind="foreach: sections">
+      <span class="clickable" data-bind="text: header, click: $root.selectSection, css: {selected: $root.selectedid() == id}">
+      </span>
+    </div>
+
+    <div>
+
+      <div data-bind="if: editor">
+        <div id="editor" class="container" data-bind="with: editorContext">
+
+          <div class="title">Editeur</div>
+
+          <div data-bind="text:helptext"></div>
+          <div id="formTitle">Titre : <input type="text" data-bind="textInput: title" /></div>
+      
+          <div id="fieldEditor">
+            Nouveau champ : <input id="fieldName" type="text" data-bind="textInput: label" />
+            <div class="inputTypes" data-bind="foreach: availableInputTypes">
+              <span class="button" data-bind="text: name, click: $parent.selectInputType, css: {selected: selected}"  />
+            </div> 
+            <div id="choicesZone" data-bind="if: inputNeedChoice">
+              Choix possibles : <input id="choiceInput" type="text" data-bind="textInput: newchoice" >
+              <span class="button" data-bind="click: addNewChoice">Ajouter</span>
+              <div data-bind="foreach: inputChoices">
+                <span class="button nonclickable" data-bind="text: $data"></span>
+              </div>
+            </div>
+            <div id="addInput"><span class="button" data-bind="click: addInput" >Ajouter le champ</span></div>
+          </div>
+
+          <div data-bind="visible: inputs().length > 0">Les champs actuels : </div>
+          <div id="fieldsList" data-bind="foreach: inputs">
+            <div class="button nonclickable">
+              <span data-bind="text: label"></span><br>(<span data-bind="text: type" ></span>)
+            </div>
+          </div> 
+
+          <div id="endOfEdition">
+            <span class="button" data-bind="click: saveForm" >Sauvegarder</span>
+            <span class="button" data-bind="click: saveFormAndTryIt" >Sauvegarder et Tester</span>
+            <span class="button" data-bind="click: reset" >Recommencer</span>
+          </div>
+
+        </div>
+      </div>
+
+      <div data-bind="if: showForms">
+        <div class="list container" data-bind="with: formsBrowserContext">
+
+          <div class="title">Mes forms</div>
+
+          <div data-bind="foreach:forms">
+            <div class="button" data-bind="text:title, click:$parent.open"></div>
+          </div>
+
+        </div>
+      </div>
+
+      <div data-bind="if: showResults">   
+        <div class="list container" data-bind="with: resultsBrowserContext">
+
+          <div class="title">Mes réponses</div>
+
+          <div data-bind="foreach:results">
+            <div class="button" data-bind="click:$parent.open">
+              <span data-bind="text:title"></span> <br>
+              Reponse No <span data-bind="text:id"></span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+
+    <div id="filter" data-bind="visible: showForm() || showResult(), click: closeAll"></div>
+
+    <div id="form" data-bind="if: showForm, css: {display: showForm}">
+      <div class="content" data-bind="with: formContext">
+
+        <div class="title" data-bind="text: title"></div>
+
+        <table data-bind="foreach: inputs">
+          <tr>
+            <td class="label button nonclickable" data-bind="text: label"></td>
+            <td class="input" data-bind="css:{textinput: type === 'text'}">
+              <div data-bind="if: type === 'text'">
+                <input type="text" data-bind="textInput: value">
+              </div>
+              <div data-bind="if: type === 'boolean'">
+                <span class="button nonclickable"><input type="checkbox" data-bind="checked: value"></span>
+              </div>
+              <div data-bind="if: type === 'multipleChoice'">
+                <div class="choices" data-bind="foreach: choices">
+                  <div class="button nonclickable">
+                    <span data-bind="text: choiceValue"></span><br>
+                    <input type="checkbox" data-bind="checked: selected"> 
+                  </div>
+                </div>
+              </div>
+              <div data-bind="if: type === 'singleChoice'">
+                <div class="choices" data-bind="foreach: choices">
+                  <div class="button nonclickable">
+                    <span data-bind="text: choiceValue"></span><br>
+                    <input type="radio" data-bind="checked: $parent.value, attr:{name: group, value:choiceValue}">
+                  </div>
+                </div>
+              </div>
+            </td>
+          </tr>
+        </table>
+
+        <div id="savingpanel">
+          <span class="button" data-bind="click: saveResult" >Sauvegarder</span>
+          <span class="button" data-bind="click: saveAndShowResult" >Resultat</span>
+          <span class="button" data-bind="click: closeWithoutSaving" >Annuler</span>
+        </div>
+
+      </div>
+    </div>
+
+    <div id="result" data-bind="if: showResult, css : {display: showResult} ">
+      <div class="content" data-bind="with: resultContext">
+
+        <div class="title" data-bind="text: title"></div>
+
+        <div data-bind="foreach: answers">
+          <div class="line">
+            <div class="button nonclickable" data-bind="text: label"></div>
+            <div class="answer">
+              <div data-bind="if: type === 'text' || type === 'singleChoice'"><span data-bind="text: value"></span></div>
+              <div data-bind="if: type === 'boolean'"><span data-bind="text: value?'oui':'non'"></span></div>
+              <div data-bind="if: type === 'multipleChoice'">
+                <div data-bind="foreach: value"><div data-bind="text: $data"></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="closepanel" >
+          <span class="button" data-bind="click: finishReading" >Fermer</span>
+        </div>
+
+      </div>
+    </div>
+
+
+
+
+
+  </body>
+</html>
